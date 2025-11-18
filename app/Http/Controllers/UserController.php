@@ -10,11 +10,19 @@ use Illuminate\Support\Str;
 class UserController extends Controller
 {
 
-    public function index()
-    {
-        $users = User::latest()->paginate(8);
-        return view('users.index', compact('users'));
+public function index(Request $request)
+{
+    $users = User::latest()->paginate(8); 
+    
+    if ($request->ajax()) {
+        return response()->json([
+            'users' => view('users.partials.user-cards', compact('users'))->render(),
+            'has_more' => $users->hasMorePages()
+        ]);
     }
+    
+    return view('users.index', compact('users'));
+}
 
     public function create()
     {
@@ -22,33 +30,33 @@ class UserController extends Controller
     }
 
     public function store(Request $request)
-{
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|email|unique:users,email',
-        'bio' => 'nullable|string|max:500',
-        'avatar' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB max
-        'password' => 'required|string|min:8',
-    ]);
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'bio' => 'nullable|string|max:500',
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB max
+            'password' => 'required|string|min:8',
+        ]);
 
-    if ($request->hasFile('avatar')) {
-        $avatar = $request->file('avatar');
-        $filename = Str::uuid() . '.' . $avatar->getClientOriginalExtension();
-        
-        // Store in storage/app/public/uploads/avatars/
-        $path = $avatar->storeAs('uploads/avatars', $filename, 'public');
-        
-        // Save just the relative path (avatars/filename.ext)
-        $validated['avatar'] = 'avatars/' . $filename;
+        if ($request->hasFile('avatar')) {
+            $avatar = $request->file('avatar');
+            $filename = Str::uuid() . '.' . $avatar->getClientOriginalExtension();
+
+            // Store in storage/app/public/uploads/avatars/
+            $path = $avatar->storeAs('uploads/avatars', $filename, 'public');
+
+            // Save just the relative path (avatars/filename.ext)
+            $validated['avatar'] = 'avatars/' . $filename;
+        }
+
+        $validated['password'] = bcrypt($validated['password']);
+
+        User::create($validated);
+
+        return redirect()->route('users.index')
+            ->with('success', 'User created successfully!');
     }
-
-    $validated['password'] = bcrypt($validated['password']);
-
-    User::create($validated);
-
-    return redirect()->route('users.index')
-        ->with('success', 'User created successfully!');
-}
 
 
     public function show(User $user)

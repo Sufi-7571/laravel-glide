@@ -26,55 +26,121 @@
                 </div>
             </div>
         @else
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                @foreach ($users as $user)
-                    <div
-                        class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition transform hover:scale-105 group">
-                        <div class="relative">
-                            <!-- Large avatar with Glide processing -->
-                            <img src="{{ $user->avatar_url }}?w=400&h=400&fit=crop&fm=webp&q=85" alt="{{ $user->name }}"
-                                class="w-full h-64 object-cover">
-
-                            <!-- Overlay on hover -->
-                            <div
-                                class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition duration-300 flex items-end">
-                                <div class="p-4 w-full">
-                                    <a href="{{ route('users.show', $user) }}"
-                                        class="block w-full text-center bg-white text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition mb-2">
-                                        View Profile
-                                    </a>
-                                    <form action="{{ route('users.destroy', $user) }}" method="POST" class="w-full">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" onclick="return confirm('Are you sure?')"
-                                            class="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition">
-                                            Delete
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-6">
-                            <h3 class="text-xl font-bold text-gray-900 mb-2">{{ $user->name }}</h3>
-                            <p class="text-gray-600 text-sm mb-4">{{ $user->email }}</p>
-
-                            @if ($user->bio)
-                                <p class="text-gray-700 text-sm line-clamp-3">{{ $user->bio }}</p>
-                            @endif
-
-                            <div class="mt-4 pt-4 border-t border-gray-200">
-                                <p class="text-xs text-gray-500">Joined {{ $user->created_at->diffForHumans() }}</p>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
+            <div id="users-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                @include('users.partials.user-cards')
             </div>
 
-            <!-- Pagination -->
-            <div class="mt-8">
-                {{ $users->links() }}
+            <!-- Loading Indicator -->
+            <div id="loading" class="hidden mt-8 text-center">
+                <div class="inline-flex items-center px-6 py-3 bg-white rounded-lg shadow-lg">
+                    <svg class="animate-spin h-5 w-5 mr-3 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                            stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                    <span class="text-gray-700 font-medium">Loading more users...</span>
+                </div>
             </div>
+
+            <!-- Load More Button (fallback) -->
+            <div id="load-more-container" class="mt-8 text-center {{ !$users->hasMorePages() ? 'hidden' : '' }}">
+                <button id="load-more-btn"
+                    class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-lg font-medium hover:shadow-xl transition transform hover:scale-105">
+                    Load More Users
+                </button>
+            </div>
+
+            <!-- End of Results -->
+            <div id="end-message" class="hidden mt-8 text-center">
+                <p class="text-gray-500 font-medium">You've reached end. No more Users to display!</p>
+            </div>
+
+            <!-- Sentinel for Intersection Observer -->
+            <div id="sentinel" class="h-10"></div>
         @endif
     </div>
+
+    @push('scripts')
+        <script>
+            let currentPage = 1;
+            let loading = false;
+            let hasMore = {{ $users->hasMorePages() ? 'true' : 'false' }};
+
+            const loadingDiv = document.getElementById('loading');
+            const usersContainer = document.getElementById('users-container');
+            const sentinel = document.getElementById('sentinel');
+            const endMessage = document.getElementById('end-message');
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            const loadMoreContainer = document.getElementById('load-more-container');
+
+            // Manual Load More Button
+            if (loadMoreBtn) {
+                loadMoreBtn.addEventListener('click', function() {
+                    loadMoreUsers();
+                });
+            }
+
+            // Intersection Observer for infinite scroll
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !loading && hasMore) {
+                        loadMoreUsers();
+                    }
+                });
+            }, {
+                rootMargin: '100px'
+            });
+
+            if (sentinel && hasMore) {
+                observer.observe(sentinel);
+            }
+
+            function loadMoreUsers() {
+                if (loading || !hasMore) return;
+
+                loading = true;
+                loadingDiv.classList.remove('hidden');
+                if (loadMoreContainer) loadMoreContainer.classList.add('hidden');
+
+                fetch(`{{ route('users.index') }}?page=${currentPage + 1}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Append new users
+                        usersContainer.insertAdjacentHTML('beforeend', data.users);
+
+                        currentPage++;
+                        hasMore = data.has_more;
+
+                        // Hide loading indicator
+                        loadingDiv.classList.add('hidden');
+
+                        // If no more pages, show end message and stop observing
+                        if (!hasMore) {
+                            observer.disconnect();
+                            endMessage.classList.remove('hidden');
+                            if (loadMoreContainer) loadMoreContainer.classList.add('hidden');
+                        } else {
+                            if (loadMoreContainer) loadMoreContainer.classList.remove('hidden');
+                        }
+
+                        loading = false;
+                    })
+                    .catch(error => {
+                        console.error('Error loading users:', error);
+                        loadingDiv.classList.add('hidden');
+                        if (loadMoreContainer) loadMoreContainer.classList.remove('hidden');
+                        loading = false;
+                    });
+            }
+        </script>
+    @endpush
 @endsection
