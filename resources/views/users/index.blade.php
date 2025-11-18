@@ -46,7 +46,7 @@
                 </div>
             </div>
 
-            <!-- Load More Button (fallback) -->
+            <!-- Load More Button -->
             <div id="load-more-container" class="mt-8 text-center {{ !$users->hasMorePages() ? 'hidden' : '' }}">
                 <button id="load-more-btn"
                     class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-lg font-medium hover:shadow-xl transition transform hover:scale-105">
