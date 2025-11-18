@@ -4,7 +4,8 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use League\Glide\Server;
 
-Route::get('/', [UserController::class, 'index'])->name('home');
+Route::get('/', [UserController::class, 'index'])
+    ->name('home');
 
 Route::resource('users', UserController::class)->only([
     'index',
