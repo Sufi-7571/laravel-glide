@@ -12,7 +12,7 @@ class UserWithAvatarsSeeder extends Seeder
     {
         echo "Creating 10 users with random avatars...\n";
 
-        // Available avatar images
+    
         $avatars = [
             'avatars/user1.jpg',
             'avatars/user2.jpg',
@@ -28,15 +28,15 @@ class UserWithAvatarsSeeder extends Seeder
 
         for ($i = 1; $i <= 10; $i++) {
             try {
-                // Pick a random avatar from the array
+                
                 $randomAvatar = $avatars[array_rand($avatars)];
                 
                 User::create([
                     'name' => fake()->name(),
                     'email' => fake()->unique()->safeEmail(),
                     'password' => bcrypt('password'),
-                    'bio' => fake()->sentence(5), // 5 words only
-                    'avatar' => $randomAvatar, // Random image
+                    'bio' => fake()->sentence(5),
+                    'avatar' => $randomAvatar,
                 ]);
                 
                 echo "Created user {$i}/10 with avatar: {$randomAvatar}\n";

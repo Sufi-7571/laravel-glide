@@ -5,7 +5,7 @@
 @section('content')
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="mb-8">
-            <h1 class="text-4xl font-bold text-gray-900">User Gallery</h1>
+            <h1 class="text-4xl font-bold text-sky-700">User Gallery</h1>
             <p class="text-gray-600 mt-2">Powered by Laravel Glide - On-the-fly Image Processing</p>
         </div>
 

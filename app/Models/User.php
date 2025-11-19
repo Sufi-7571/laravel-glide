@@ -49,8 +49,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the avatar URL attribute.
-     * This generates the Glide image URL for the user's avatar.
      *
      * @return string|null
      */
