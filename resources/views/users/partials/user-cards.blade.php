@@ -2,9 +2,18 @@
     <div
         class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition transform hover:scale-105 group">
         <div class="relative">
-            <!-- Large avatar with Glide processing -->
-            <img src="{{ $user->avatar_url }}?w=400&h=400&fit=crop&fm=webp&q=85" alt="{{ $user->name }}"
-                class="w-full h-64 object-cover">
+            <!-- Large avatar with Glide processing and lazy loading -->
+            <div class="relative h-64 bg-gray-200">
+                <!-- Tiny blurred placeholder (loads instantly) -->
+                <img src="{{ $user->avatar_url }}?w=20&h=20&blur=10&fm=webp" alt="{{ $user->name }}"
+                    class="absolute inset-0 w-full h-full object-cover blur-sm">
+
+                <!-- Full quality image (lazy loaded) -->
+                <img src="{{ $user->avatar_url }}?w=400&h=400&fit=crop&fm=webp&q=85" alt="{{ $user->name }}"
+                    loading="lazy"
+                    class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300"
+                    onload="this.style.opacity='1'">
+            </div>
 
             <!-- Overlay on hover -->
             <div

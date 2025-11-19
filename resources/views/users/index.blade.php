@@ -30,22 +30,6 @@
                 @include('users.partials.user-cards')
             </div>
 
-            <!-- Loading Indicator -->
-            <div id="loading" class="hidden mt-8 text-center">
-                <div class="inline-flex items-center px-6 py-3 bg-white rounded-lg shadow-lg">
-                    <svg class="animate-spin h-5 w-5 mr-3 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none"
-                        viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                            stroke-width="4">
-                        </circle>
-                        <path class="opacity-75" fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                        </path>
-                    </svg>
-                    <span class="text-gray-700 font-medium">Loading more users...</span>
-                </div>
-            </div>
-
             <!-- Load More Button -->
             <div id="load-more-container" class="mt-8 text-center {{ !$users->hasMorePages() ? 'hidden' : '' }}">
                 <button id="load-more-btn"
@@ -70,7 +54,6 @@
             let loading = false;
             let hasMore = {{ $users->hasMorePages() ? 'true' : 'false' }};
 
-            const loadingDiv = document.getElementById('loading');
             const usersContainer = document.getElementById('users-container');
             const sentinel = document.getElementById('sentinel');
             const endMessage = document.getElementById('end-message');
@@ -103,7 +86,6 @@
                 if (loading || !hasMore) return;
 
                 loading = true;
-                loadingDiv.classList.remove('hidden');
                 if (loadMoreContainer) loadMoreContainer.classList.add('hidden');
 
                 fetch(`{{ route('users.index') }}?page=${currentPage + 1}`, {
@@ -120,9 +102,6 @@
                         currentPage++;
                         hasMore = data.has_more;
 
-                        // Hide loading indicator
-                        loadingDiv.classList.add('hidden');
-
                         // If no more pages, show end message and stop observing
                         if (!hasMore) {
                             observer.disconnect();
@@ -136,7 +115,6 @@
                     })
                     .catch(error => {
                         console.error('Error loading users:', error);
-                        loadingDiv.classList.add('hidden');
                         if (loadMoreContainer) loadMoreContainer.classList.remove('hidden');
                         loading = false;
                     });
